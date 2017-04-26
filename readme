@@ -1,3 +1,9 @@
 """
 This is a crawler written by python v3.6
 """
+
+There are currently 3 files in the crawler
+
+lkong_crawler.py : this is a specifiled crawler to lkong.net. Now it is in progress
+orm.py: This is the ORM file
+craw.py : this is the class for the crawler - draft one . only implmenet the basic function. 
