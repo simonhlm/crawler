@@ -1,4 +1,6 @@
-#
+#! /usr/bin/env python
+# -*- encoding:utf-8 -*-
+
 import re
 
 from bs4 import BeautifulSoup
@@ -52,7 +54,7 @@ def process_post(r_post):
 def process_thread(r_thread):
 
     bsobj = BeautifulSoup(r_thread.content,'html.parser')
-    #result = bsobj.find_all('div',{'id':'postlist'})
+
     thread_href=[]
     thread_name=[]
     thread_id=[]
@@ -61,8 +63,8 @@ def process_thread(r_thread):
     thread_replies=[]
     thread_last_updator=[]
     thread_last_update_time=[]
-    thread_info=()
-    print('process thread')
+
+
     thread_name_href = bsobj.find_all('a',{'class':'xst','href':re.compile(r'thread-\d*-\d*-\d*.html$')})
     for item in thread_name_href: # for the post content
         thread_href.append(item['href'])
@@ -73,9 +75,9 @@ def process_thread(r_thread):
     for item in creator:
         thread_creator.append(item.text)
 
-    #create_time = bsobj.find_all('tbody',{'id':re.compile(r'.*thread.*')})
-    #for item in create_time:
-        #create_time.append(re.search(r'.*(<em>\d{4}-\d*-\d*</em>).*',str(item)).group(1))
+    create_time = bsobj.find_all('tbody',{'id':re.compile(r'.*thread.*')})
+    for item in create_time:
+        thread_create_date.append(re.search(r'.*<em>(\d{4}-\d*-\d*)</em>.*',str(item)).group(1))
 
     replies = bsobj.find_all('a',{'class':'xi2','href':re.compile(r'thread-\d*-\d*-\d*.html$')})
     for item in replies:
@@ -89,7 +91,7 @@ def process_thread(r_thread):
     for item in last_update_time:
         thread_last_update_time.append(item.text)
 
-    return zip(thread_id, thread_name, thread_href,  thread_creator, thread_replies,thread_last_updator, thread_last_update_time)
+    return zip(thread_id, thread_name, thread_href, thread_create_date,thread_creator, thread_replies,thread_last_updator, thread_last_update_time)
 
 if __name__ == '__main__':
 
@@ -103,8 +105,8 @@ if __name__ == '__main__':
     response_thread = lkong.get_content(threads_url, params=thread_info)
     threads_list = list(process_thread(response_thread))
 
-    #for i in threads_list:
-        #print(i)
+    for i in threads_list:
+        print(i)
 
     #response_post = lkong.get_content(threads_list[1][2])
     #post_info = process_post(response_thread)
@@ -114,13 +116,13 @@ if __name__ == '__main__':
 
     # 
 
-    for thread in threads_list:
+    #for thread in threads_list:
         #process individule post
 
-        response_post = lkong.get_content(thread[2])
-        post_info = process_post(response_post)
-        for i in post_info:
-            print(i)
+        #response_post = lkong.get_content(thread[2])
+        #post_info = process_post(response_post)
+        #for i in post_info:
+            #print(i)
 """
     engine = create_engine('mysql+pymysql://simon:654321@localhost/crawler',encoding='utf8', convert_unicode=True)
     session = sessionmaker()
