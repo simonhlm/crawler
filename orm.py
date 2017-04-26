@@ -39,7 +39,6 @@ class Thread(Base):
     views = Column(Integer)
     thread_href = Column(String(300))
 
-
 class Website(Base):
     __tablename__ = 'websites'
 
@@ -48,3 +47,12 @@ class Website(Base):
     website_name = Column(String(30))
     forum_id = Column(String(30))
     forum_name = Column(String(30))
+
+if __name__ == '__main__':
+    from sqlalchemy import create_engine
+    engine = create_engine('sqlite:///lkong.db')
+     
+    from sqlalchemy.orm import sessionmaker
+    session = sessionmaker()
+    session.configure(bind=engine)
+    Base.metadata.create_all(engine)

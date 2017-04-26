@@ -64,7 +64,6 @@ def process_thread(r_thread):
     thread_last_updator=[]
     thread_last_update_time=[]
 
-
     thread_name_href = bsobj.find_all('a',{'class':'xst','href':re.compile(r'thread-\d*-\d*-\d*.html$')})
     for item in thread_name_href: # for the post content
         thread_href.append(item['href'])
@@ -100,37 +99,49 @@ if __name__ == '__main__':
     threads_url  = 'http://www.lkong.net/forum.php'
     thread_info = {'mod':'forumdisplay','fid':'8','page':'1'}
 
+    #engine = create_engine('mysql+pymysql://simon:654321@localhost/crawler',encoding='utf8', convert_unicode=True)
+    engine = create_engine('sqlite:///lkong.db')
+    session = sessionmaker()
+    session.configure(bind=engine)
+    s = session()
+
     lkong = Craw()
 
     response_thread = lkong.get_content(threads_url, params=thread_info)
     threads_list = list(process_thread(response_thread))
 
-    for i in threads_list:
-        print(i)
-
-    #response_post = lkong.get_content(threads_list[1][2])
-    #post_info = process_post(response_thread)
-
-    #for i in post_info:
-    #   print(i)
-
-    # 
-
-    #for thread in threads_list:
+    for thread in threads_list:
         #process individule post
-
-        #response_post = lkong.get_content(thread[2])
-        #post_info = process_post(response_post)
-        #for i in post_info:
-            #print(i)
-"""
-    engine = create_engine('mysql+pymysql://simon:654321@localhost/crawler',encoding='utf8', convert_unicode=True)
-    session = sessionmaker()
-    session.configure(bind=engine)
-    s = session()
-    for item in post_info:
-        print(item)
-        post_record = Post(post_author=item[0],post_content=item[1])
-        s.add(post_record)
+        print('process thread: ',thread[1])
+        thread_record = Thread(    
+            website_id = 1
+            ,forum_id = 8
+            ,thread_id = thread[0]
+            ,thread_name = thread[1]
+            ,creator = thread[4]
+            #,create_date = thread[3]
+            ,last_updator = thread[6]
+            #,last_update_time = thread[7]
+            ,replies = thread[5]
+            ,thread_href = thread[2])
+        s.add(thread_record)
         s.commit()
-        """
+
+        response_post = lkong.get_content(thread[2])
+        post_info = process_post(response_post)
+
+        for post in post_info:
+            print('process post floor: ', post[4])
+            post_record = Post(
+                post_author=post[1],
+                post_content=post[2],
+                website_id = 1,
+                forum_id = 8,
+                #thread_id = ,
+                post_id = post[0],
+                #post_date = post[3],
+                post_floor = post[4])
+            s.add(post_record)
+            s.commit()
+
+    s.close()
