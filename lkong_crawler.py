@@ -24,13 +24,11 @@ def process_post(r_post):
     post_floor=[]
     #post_trailer=[]
 
-    #从返回的页面抓取所需的column, 处理并返回tuple
     thread_title_href = bsobj.find_all('a',{'id':'thread_subject'})
     for item in thread_title_href: # for the post content
         thread_id.append(re.search(r'tid=(\d*)&extra',item['href']).group(1))
         thread_name.append(item.text)
 
-    #抓取数据
     auth = bsobj.find_all('a',{'class':'xw1','href':re.compile(r'uid=\d*$')})
     for item in auth: # for the post content
         post_author.append(item.text)
@@ -43,7 +41,6 @@ def process_post(r_post):
     floor = bsobj.find_all('a',{'class':'brm','id':re.compile(r'^postnum')})
     for item in floor:
         post_floor.append(re.search(r'(\d*)#$',item.text).group(1))
-        #post_floor.append(item.text)
 
     date = bsobj.find_all('em',{'id':re.compile(r'^authorposton')})
     for item in date:
