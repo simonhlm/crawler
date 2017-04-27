@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from craw import Craw
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import func
 
 from orm import *
 
@@ -40,13 +41,13 @@ def process_post(r_post):
 
     floor = bsobj.find_all('a',{'class':'brm','id':re.compile(r'^postnum')})
     for item in floor:
-        post_floor.append(re.search(r'(\d*)#$',item.text).group(1))
+        post_floor.append(int(re.search(r'(\d*)#$',item.text).group(1)))
 
     date = bsobj.find_all('em',{'id':re.compile(r'^authorposton')})
     for item in date:
         post_date.append(re.search(r'.*(\d{4}.*\s\d{2}:\d{2})$',item.text).group(1))
 
-    return zip(post_id, post_author, post_content, post_date, post_floor)
+    return zip(post_id, post_author, post_content, post_date, post_floor), thread_id[0]
 
 def process_thread(r_thread):
 
@@ -91,8 +92,6 @@ def process_thread(r_thread):
 
 if __name__ == '__main__':
 
-    post_url  = 'http://www.lkong.net/thread-1735189-1-1.html'
-
     threads_url  = 'http://www.lkong.net/forum.php'
     thread_info = {'mod':'forumdisplay','fid':8,'page':1}
 
@@ -116,8 +115,10 @@ if __name__ == '__main__':
             # check if the thread need to be process
             last_replies = s.query(Thread.replies).filter(Thread.thread_id == thread[0]).first()
 
+            last_pagenum = new_pagenum = 1
+            thread_link = ''
             if last_replies is None or thread[5] > last_replies[0]: 
-                print('process thread: ',thread[1], 'total %s floors', thread[5])
+                print('process thread: ',thread[1], 'total %s floors' % thread[5])
                 thread_record = Thread(    
                     website_id = 1
                     ,forum_id = 8
@@ -132,23 +133,39 @@ if __name__ == '__main__':
                 s.add(thread_record)
                 s.commit()
 
-                response_post = lkong.get_content(thread[2])
-                post_info = process_post(response_post)
+                #process thread links
+                last_pagenum = 0 if last_replies is None else last_replies[0] // 20 + 1
+                new_pagenum = thread_record.replies // 20 + 1
 
-                for post in post_info:
-                    #print('process post floor: ', post[4])
-                    post_record = Post(
-                        post_author=post[1],
-                        post_content=post[2],
-                        website_id = 1,
-                        forum_id = 8,
-                        #thread_id = ,
-                        post_id = post[0],
-                        #post_date = post[3],
-                        post_floor = post[4])
-                    s.add(post_record)
-                    s.commit()
-            else:
+                for page in range(last_pagenum, new_pagenum):
+                    thread_link = re.sub(r'-\d-','-'+str(page)+'-',thread[2])
+                    response_post = lkong.get_content(thread_link)
+                    post_info, post_thread_id = process_post(response_post)
+
+                    _floor = s.query(func.max(Post.post_floor)).filter(Post.thread_id == post_thread_id).all()
+
+                    #it should be optimized, stuiped :-(
+                    _max_floor = 0 if _floor[0] is None else _floor[0][0]
+                    max_floor = 0 if _max_floor is None else _max_floor
+
+                    for post in post_info:
+
+                        if post[4] > max_floor:
+                            print('process post floor: ', post[4])
+                            post_record = Post(
+                                post_author=post[1],
+                                post_content=post[2],
+                                website_id = 1,
+                                forum_id = 8,
+                                thread_id = post_thread_id,
+                                post_id = post[0],
+                                #post_date = post[3],
+                                post_floor = post[4])
+                            s.add(post_record)
+                            s.commit()
+                        else: #ignore process floors
+                            pass
+            else: #ignore unchanged thread
                 pass
 
         thread_info['page'] -=  1
