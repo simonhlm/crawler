@@ -95,8 +95,6 @@ if __name__ == '__main__':
     threads_url  = 'http://www.lkong.net/forum.php'
     thread_info = {'mod':'forumdisplay','fid':8,'page':1}
 
-    #engine = create_engine('mysql+pymysql://simon:654321@localhost/crawler',\
-    #encoding='utf8', convert_unicode=True)
     engine = create_engine('sqlite:///lkong.db')
     session = sessionmaker()
     session.configure(bind=engine)
