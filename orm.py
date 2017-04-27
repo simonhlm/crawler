@@ -19,7 +19,7 @@ class Post(Base):
     thread_name = Column(String(60))
     post_content = Column(Text(convert_unicode=True))
     post_date = Column(DateTime)
-    post_floor = Column(Integer)
+    post_floor = Column(Integer, default = 0)
     post_trailer = Column(String(300))
 
 
@@ -35,7 +35,7 @@ class Thread(Base):
     create_date = Column(Date)
     last_updator = Column(String(45))
     last_update_time = Column(DateTime)
-    replies = Column(Integer)
+    replies = Column(Integer, default = 0)
     views = Column(Integer)
     thread_href = Column(String(300))
 

@@ -77,7 +77,7 @@ def process_thread(r_thread):
 
     replies = bsobj.find_all('a',{'class':'xi2','href':re.compile(r'thread-\d*-\d*-\d*.html$')})
     for item in replies:
-        thread_replies.append(item.text)
+        thread_replies.append(int(item.text))
 
     last_updator = bsobj.find_all('a',{'href':re.compile(r'space&username=.*$')})
     for item in last_updator:
@@ -94,9 +94,10 @@ if __name__ == '__main__':
     post_url  = 'http://www.lkong.net/thread-1735189-1-1.html'
 
     threads_url  = 'http://www.lkong.net/forum.php'
-    thread_info = {'mod':'forumdisplay','fid':'8','page':'1'}
+    thread_info = {'mod':'forumdisplay','fid':8,'page':1}
 
-    #engine = create_engine('mysql+pymysql://simon:654321@localhost/crawler',encoding='utf8', convert_unicode=True)
+    #engine = create_engine('mysql+pymysql://simon:654321@localhost/crawler',\
+    #encoding='utf8', convert_unicode=True)
     engine = create_engine('sqlite:///lkong.db')
     session = sessionmaker()
     session.configure(bind=engine)
@@ -104,41 +105,51 @@ if __name__ == '__main__':
 
     lkong = Craw()
 
-    response_thread = lkong.get_content(threads_url, params=thread_info)
-    threads_list = list(process_thread(response_thread))
+    while thread_info['page'] > 0: # The loop control, 
+    # if the current reading page is not end, keep looping
 
-    for thread in threads_list:
-        #process individule post
-        print('process thread: ',thread[1])
-        thread_record = Thread(    
-            website_id = 1
-            ,forum_id = 8
-            ,thread_id = thread[0]
-            ,thread_name = thread[1]
-            ,creator = thread[4]
-            #,create_date = thread[3]
-            ,last_updator = thread[6]
-            #,last_update_time = thread[7]
-            ,replies = thread[5]
-            ,thread_href = thread[2])
-        s.add(thread_record)
-        s.commit()
+        response_thread = lkong.get_content(threads_url, params=thread_info)
+        threads_list = list(process_thread(response_thread))
 
-        response_post = lkong.get_content(thread[2])
-        post_info = process_post(response_post)
+        last_replies = 0
+        for thread in threads_list:
+            # check if the thread need to be process
+            last_replies = s.query(Thread.replies).filter(Thread.thread_id == thread[0]).first()
 
-        for post in post_info:
-            print('process post floor: ', post[4])
-            post_record = Post(
-                post_author=post[1],
-                post_content=post[2],
-                website_id = 1,
-                forum_id = 8,
-                #thread_id = ,
-                post_id = post[0],
-                #post_date = post[3],
-                post_floor = post[4])
-            s.add(post_record)
-            s.commit()
+            if last_replies is None or thread[5] > last_replies[0]: 
+                print('process thread: ',thread[1], 'total %s floors', thread[5])
+                thread_record = Thread(    
+                    website_id = 1
+                    ,forum_id = 8
+                    ,thread_id = thread[0]
+                    ,thread_name = thread[1]
+                    ,creator = thread[4]
+                    #,create_date = thread[3]
+                    ,last_updator = thread[6]
+                    #,last_update_time = thread[7]
+                    ,replies = thread[5]
+                    ,thread_href = thread[2])
+                s.add(thread_record)
+                s.commit()
 
-    s.close()
+                response_post = lkong.get_content(thread[2])
+                post_info = process_post(response_post)
+
+                for post in post_info:
+                    #print('process post floor: ', post[4])
+                    post_record = Post(
+                        post_author=post[1],
+                        post_content=post[2],
+                        website_id = 1,
+                        forum_id = 8,
+                        #thread_id = ,
+                        post_id = post[0],
+                        #post_date = post[3],
+                        post_floor = post[4])
+                    s.add(post_record)
+                    s.commit()
+            else:
+                pass
+
+        thread_info['page'] -=  1
+        s.close()
