@@ -149,8 +149,9 @@ if __name__ == '__main__':
                     max_floor = 0 if _max_floor is None else _max_floor
 
                     for post in post_info:
-                        #print('process post floor: ', post[4])
+
                         if post[4] > max_floor:
+                            print('process post floor: ', post[4])
                             post_record = Post(
                                 post_author=post[1],
                                 post_content=post[2],
