@@ -5,7 +5,7 @@ import re
 
 from bs4 import BeautifulSoup
 from craw import Craw
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, update, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 
@@ -118,7 +118,7 @@ if __name__ == '__main__':
             last_pagenum = new_pagenum = 1
             thread_link = ''
             if last_replies is None or thread[5] > last_replies[0]: 
-                print('process thread: ',thread[1], 'total %s floors' % thread[5])
+                print('process thread: ',thread[1], 'total %s floors' % (str(thread[5]+1)))
                 thread_record = Thread(    
                     website_id = 1
                     ,forum_id = 8
@@ -130,14 +130,18 @@ if __name__ == '__main__':
                     #,last_update_time = thread[7]
                     ,replies = thread[5]
                     ,thread_href = thread[2])
-                s.add(thread_record)
-                s.commit()
+                if last_replies is None:
+                    s.add(thread_record)
+                    s.commit()
+                else:
+                    stmt = s.query(Thread.replies).filter(Thread.thread_id == thread[0]).update({'replies':thread[5]})
+                    s.commit()
 
                 #process thread links
                 last_pagenum = 0 if last_replies is None else last_replies[0] // 20 + 1
                 new_pagenum = thread_record.replies // 20 + 1
 
-                for page in range(last_pagenum, new_pagenum):
+                for page in range(last_pagenum, new_pagenum + 1 ):
                     thread_link = re.sub(r'-\d-','-'+str(page)+'-',thread[2])
                     response_post = lkong.get_content(thread_link)
                     post_info, post_thread_id = process_post(response_post)

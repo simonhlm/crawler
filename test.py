@@ -11,9 +11,9 @@ values = cursor.fetchall()
 for item in values:
     print(item)
 
-cursor.execute('select * from posts')
-values = cursor.fetchone()
-print(values)
+#cursor.execute('select * from posts')
+#values = cursor.fetchone()
+#print(values)
 """
 engine = create_engine('sqlite:///lkong.db')
 session = sessionmaker()
