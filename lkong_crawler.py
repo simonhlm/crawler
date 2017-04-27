@@ -92,12 +92,14 @@ def process_thread(r_thread):
 
 if __name__ == '__main__':
 
-    threads_url  = 'http://www.lkong.net/forum.php'
-    thread_info = {'mod':'forumdisplay','fid':8,'page':1}
+    start_page = 3
+    forum_id = 8
 
-    #engine = create_engine('mysql+pymysql://simon:654321@localhost/crawler',\
-    #encoding='utf8', convert_unicode=True)
-    engine = create_engine('sqlite:///lkong.db')
+    threads_url  = 'http://www.lkong.net/forum.php'
+    thread_info = {'mod':'forumdisplay','fid':forum_id,'page':start_page}
+
+    engine = create_engine('mysql+pymysql://simon:654321@localhost/crawler',encoding='utf8', convert_unicode=True)
+    #engine = create_engine('sqlite:///lkong.db')
     session = sessionmaker()
     session.configure(bind=engine)
     s = session()
@@ -125,9 +127,9 @@ if __name__ == '__main__':
                     ,thread_id = thread[0]
                     ,thread_name = thread[1]
                     ,creator = thread[4]
-                    #,create_date = thread[3]
+                    ,create_date = thread[3]
                     ,last_updator = thread[6]
-                    #,last_update_time = thread[7]
+                    ,last_update_time = thread[7]
                     ,replies = thread[5]
                     ,thread_href = thread[2])
                 if last_replies is None:
@@ -163,7 +165,7 @@ if __name__ == '__main__':
                                 forum_id = 8,
                                 thread_id = post_thread_id,
                                 post_id = post[0],
-                                #post_date = post[3],
+                                post_date = post[3],
                                 post_floor = post[4])
                             s.add(post_record)
                             s.commit()
