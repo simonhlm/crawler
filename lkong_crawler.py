@@ -2,6 +2,7 @@
 # -*- encoding:utf-8 -*-
 
 import re
+import logging
 
 from bs4 import BeautifulSoup
 from craw import Craw
@@ -10,6 +11,12 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 
 from orm import *
+
+logging.basicConfig(level=logging.DEBUG,
+    format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+    datefmt='%a, %d %b %Y %H:%M:%S',
+    filename='mylog.log',
+    filemode='w')
 
 def process_post(r_post):
 
@@ -27,7 +34,12 @@ def process_post(r_post):
 
     thread_title_href = bsobj.find_all('a',{'id':'thread_subject'})
     for item in thread_title_href: # for the post content
-        thread_id.append(re.search(r'tid=(\d*)&extra',item['href']).group(1))
+        try:
+            thread_id.append(re.search(r'tid=(\d*)&extra',item['href']).group(1))
+        except Exception as e:
+            thread_id.append(0)
+            logging.debug('a problem on the %s,  error is %s' %(item.text, e))
+        
         thread_name.append(item.text)
 
     auth = bsobj.find_all('a',{'class':'xw1','href':re.compile(r'uid=\d*$')})
@@ -37,7 +49,10 @@ def process_post(r_post):
     content = bsobj.find_all('td',{'id':re.compile('^postmessage')})
     for item in content: # for the post content
         post_id.append(re.search(r'message_(\d*)',item['id']).group(1))
-        post_content.append(re.split(r'\xa0',item.text)[0]) # split the content by \xa0 and save the real one 
+        _content = re.split(r'\xa0──\xa0',item.text)[0]
+        #print(re.sub(r'\n|\t|\r',' ',_content))
+        post_content.append(re.sub(r'\n|\t|\r',' ',_content))
+        #post_content.append(re.split(r'\xa0──\xa0',item.text)[0]) # split the content by \xa0 and save the real one 
 
     floor = bsobj.find_all('a',{'class':'brm','id':re.compile(r'^postnum')})
     for item in floor:
@@ -92,11 +107,12 @@ def process_thread(r_thread):
 
 if __name__ == '__main__':
 
-    start_page = 3
-    forum_id = 8
+    start_page = 1
+    _forum_id = 48
+    _website_id = 1
 
     threads_url  = 'http://www.lkong.net/forum.php'
-    thread_info = {'mod':'forumdisplay','fid':forum_id,'page':start_page}
+    thread_info = {'mod':'forumdisplay','fid':_forum_id,'page':start_page}
 
     engine = create_engine('mysql+pymysql://simon:654321@localhost/crawler',encoding='utf8', convert_unicode=True)
     #engine = create_engine('sqlite:///lkong.db')
@@ -122,8 +138,8 @@ if __name__ == '__main__':
             if last_replies is None or thread[5] > last_replies[0]: 
                 print('process thread: ',thread[1], 'total %s floors' % (str(thread[5]+1)))
                 thread_record = Thread(    
-                    website_id = 1
-                    ,forum_id = 8
+                    website_id = _website_id
+                    ,forum_id = _forum_id
                     ,thread_id = thread[0]
                     ,thread_name = thread[1]
                     ,creator = thread[4]
@@ -157,18 +173,22 @@ if __name__ == '__main__':
                     for post in post_info:
 
                         if post[4] > max_floor:
-                            print('process post floor: ', post[4])
+                            #print('process post floor: ', post[4])
                             post_record = Post(
                                 post_author=post[1],
                                 post_content=post[2],
-                                website_id = 1,
-                                forum_id = 8,
+                                website_id = _website_id,
+                                forum_id = _forum_id,
                                 thread_id = post_thread_id,
                                 post_id = post[0],
                                 post_date = post[3],
                                 post_floor = post[4])
-                            s.add(post_record)
-                            s.commit()
+                            try:
+                                s.add(post_record)
+                                s.commit()
+                            except Exception as e:
+                                logging.debug('there is a problem on written post: ',post[0],'error is ',e)
+
                         else: #ignore process floors
                             pass
             else: #ignore unchanged thread
