@@ -107,8 +107,8 @@ def process_thread(r_thread):
 
 if __name__ == '__main__':
 
-    start_page = 1
-    _forum_id = 48
+    start_page = 88
+    _forum_id = 15
     _website_id = 1
 
     threads_url  = 'http://www.lkong.net/forum.php'

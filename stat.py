@@ -59,7 +59,7 @@ def analysis_report(report_name):
                 if word not in ban_record:
                     words.append(word)
 
-    logging.info('Total individule word: %s, Total words : %s',(len(set(words)),len(words)))
+    logging.info('Total individule word: %s, Total words : %s' % (len(set(words)),len(words)))
 
     #sort words
     words.sort()
@@ -91,7 +91,7 @@ def add_dict_word():
     pass
 
 if __name__ == '__main__':
-    jieba.load_userdict('userdict_rmmy.csv') 
+    jieba.load_userdict('userdict_rmmy.dict') 
     report_name = 'f48all'
     generate_report(report_name)
     analysis_report(report_name)
