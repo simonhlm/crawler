@@ -3,6 +3,7 @@
 
 import re
 import logging
+import cProfile
 
 from bs4 import BeautifulSoup
 from craw import Craw
@@ -126,7 +127,7 @@ if __name__ == '__main__':
     # if the current reading page is not end, keep looping
 
         response_thread = lkong.get_content(threads_url, params=thread_info)
-        threads_list = list(process_thread(response_thread))
+        cProfile.run('threads_list = list(process_thread(response_thread))')
 
         last_replies = 0
         for thread in threads_list:
